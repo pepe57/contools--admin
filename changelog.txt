@@ -1,3 +1,6 @@
+2026.07.06:
+* changed: scripts/Windows/FileSystem/ping_drives.bat: rescan drives on timeout
+
 2026.06.23:
 * fixed: scripts/*.vbs: stdout and stderr line ends output mix
 * refactor: scripts/*.vbs: refactor

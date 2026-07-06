@@ -6,15 +6,16 @@ rem   ping_drives.bat
 rem Description:
 rem   Script to ping a drive if `.pingme` file exists in the drive root to
 rem   prevent the drive fall into a sleep state because of inactivity.
+rem   Rescans drives on timeout.
 
 setlocal
-
-set "PING_DRIVES="
-for %%i in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do if exist "%%i:\.pingme" call set "PING_DRIVES=%%PING_DRIVES%% %%i"
 
 set COUNT=1
 
 :LOOP
+set "PING_DRIVES="
+for %%i in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do if exist "%%i:\.pingme" call set "PING_DRIVES=%%PING_DRIVES%% %%i"
+
 echo %COUNT% - %TIME%
 set /A COUNT+=1
 for %%i in (%PING_DRIVES%) do if exist "%%i:\.pingme" call :PING_DRIVE
