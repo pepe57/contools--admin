@@ -1,4 +1,99 @@
-@echo off
+@echo off & goto DOC_END
+
+rem NOTE:
+rem   The elevation shell code is based on:
+rem     `Uniform variant of a command line as a single argument for the mshta.exe executable and other cases` :
+rem     https://github.com/andry81/contools/discussions/11
+
+rem NOTE:
+rem   A command line or a variable (ex: `__SCRIPT__`) can contain an even
+rem   number of double quotes prefixed by the `\` character.
+rem
+rem   It can be replaced by N/2 number of quotes without the prefix or
+rem   a quote with N/2-nested escape sequence:
+rem
+rem     \""     -> "    or \"
+rem     \""""   -> ""   or \\\"
+rem     \"""""" -> """  or \\\\\\\"
+rem     etc
+rem
+rem   The meaning is to always use an even number of quotes to insert an
+rem   arbitrary number of quotes with or without an escape sequence.
+rem
+rem   For example, in the `set` command, because
+rem   the `set` command argument is started by a double quote:
+rem
+rem     >
+rem     set "A=X \"" | & < > \"""
+rem     set "B=Y \"" | & < > \"" | & < > \"""" | & < > \"""""
+
+rem CAUTION:
+rem   The environment variables does use by the shell code to workaround the
+rem   `mshta.exe` command line length limitation (see the link).
+
+rem CAUTION:
+rem   The `mshta.exe` does expand all the %-escape placeholders (`%NN`).
+rem   The script does not use `%` character in the shell code. In case of a
+rem   change in the future you must prevent the expansion by replacing all the
+rem   `%` by `%25` to avoid the command line breakage.
+rem   All the `"` does process for the same reason.
+
+rem NOTE:
+rem   The `ExecuteGlobal` is used as a workaround, because the `mshta.exe`
+rem   first argument must not be used with the surrounded quotes.
+
+rem CAUTION:
+rem   The `ShellExecute` does not wait a child process close.
+
+rem CAUTION:
+rem   The `cmd.exe` does expand the %-variables in the context of an elevated
+rem   process. You must properly escape these to avoid the expansion before the
+rem   elevation!
+
+rem CAUTION:
+rem   `\""`, `\""""`, etc expressions only has meaning inside a `.bat` script.
+rem   Any attempt to use it outside of a script (including a terminal command
+rem   line) will lead into incorrect expansion because a terminal command
+rem   line or an `.exe` command line has their own different expansion rules
+rem   including command line of the `cmd.exe` executable.
+
+rem CAUTION:
+rem   Avoid a back slash before the double quote in an executable (`.exe`)
+rem   command line, otherwise a command line parse will be broken:
+rem     >
+rem     some.exe "... ... \"
+rem                        ^ - escaped
+rem     >
+rem     some.exe "... ... \""
+rem                        ^ - escaped
+rem   To workaround:
+rem     >
+rem     some.exe "... ... \\"
+rem                        ^ - escaped
+rem     >
+rem     some.exe "... ... \\""
+rem                        ^ - escaped
+rem
+rem   A trailing double quote will be escaped in some command line parse code
+rem   runtimes. But not everywhere, for example, `cmd.exe` has different rules:
+rem
+rem     >
+rem     cmd.exe /c @echo "... ... \"
+rem                               ^ - prints as is
+
+rem NOTE:
+rem   The `::"::"::` is an unexisted statement in the VBS
+rem   (error: `VBScript compilation error: Expected statement`) in case of
+rem   strip from a string with a valid VBS shell code. So it can be used as a
+rem   VBS shell code lines delimiter in another shell code or Windows Batch
+rem   script.
+
+rem CAUTION:
+rem   If you pass a parameter or set of parameters starting the first argument,
+rem   then these may be skipped, due to the internal `cmd.exe` command line
+rem   parse logic. The command line does not ignored if started using the slash
+rem   character with the known option - `/k`, `/c` and etc.
+:DOC_END
 
 rem second `setlocal` to drop locals before a command line execution
 setlocal DISABLEDELAYEDEXPANSION & setlocal
@@ -37,40 +132,53 @@ if %WINDOWS_MAJOR_VER% GEQ 6 (
 exit /b 255
 
 :CALL_ELEVATE_AND_EXIT
-rem Based on:
-rem   `Uniform variant of a command line as a single argument for the `mshta.exe` executable and other cases` :
-rem   https://github.com/andry81/contools/discussions/11
-
 rem Windows Batch compatible command line with escapes
-set ?.=set "IMPL_MODE=1" ^& "%~f0" %*
+set "?@=/k @set \""IMPL_MODE=1\"" & \""%~f0\"" %*"
+
+rem shell code
+set "__SCRIPT__=ExecuteGlobal(\""Set objProc = CreateObject(\""""WScript.Shell\"""").Environment(\""""Process\"""") : ::"^
+::"::CreateObject(\""""Shell.Application\"""").ShellExecute objProc(\""""?0\""""), objProc(\""""?@\""""), \""""\"""", \""""runas\"""", 1 : Close()\"")"
+
+set "__SCRIPT__=%__SCRIPT__:::"::"::=%"
+
+rem command
+set "?0="
 
 (
   setlocal ENABLEDELAYEDEXPANSION
 
-  rem escape %-escapes
-  set "?.=!?.:%%=%%25!"
+  if defined COMSPEC set "?0=!COMSPEC!"
 
   rem translate Windows Batch compatible escapes into escape placeholders
-  set "?.=!?.:$=$0!"
-  set "?.=!?.:\""""""""=$4!"
-  set "?.=!?.:\""""=$3!"
-  set "?.=!?.:\""=$2!"
-  set "?.=!?.:"^=$1!"
+  set "__SCRIPT__=!__SCRIPT__:$=$0!"
+  set "__SCRIPT__=!__SCRIPT__:\""""""=$3!"
+  set "__SCRIPT__=!__SCRIPT__:\""""=$2!"
+  set "__SCRIPT__=!__SCRIPT__:\""=$1!"
+  set "__SCRIPT__=!__SCRIPT__:"^=$1!"
+
+  set "?@=!?@:$=$0!"
+  set "?@=!?@:\""""""=$3!"
+  set "?@=!?@:\""""=$2!"
+  set "?@=!?@:\""=$1!"
+  set "?@=!?@:"^=$1!"
 
   rem translate escape placeholders into `mshta.exe` (vbs) escapes
-  set "?.=!?.:$4=""""""""""""""""""""""""""""""""!"
-  set "?.=!?.:$3=""""""""""""""""!"
-  set "?.=!?.:$2=""""""""!"
-  set "?.=!?.:$1=""""!"
-  set "?.=!?.:$0=$!"
+  set "__SCRIPT__=!__SCRIPT__:$3=""""!"
+  set "__SCRIPT__=!__SCRIPT__:$2=""!"
+  set "__SCRIPT__=!__SCRIPT__:$1="!"
+  set "__SCRIPT__=!__SCRIPT__:$0=$!"
 
-  rem CAUTION: ShellExecute does not wait a child process close!
-  rem NOTE: `ExecuteGlobal` is used as a workaround, because the `mshta.exe` first argument must not be used with the surrounded quotes
+  set "?@=!?@:$3=""""!"
+  set "?@=!?@:$2=""!"
+  set "?@=!?@:$1="!"
+  set "?@=!?@:$0=$!"
 
   rem with locals drop
-  for /F "usebackq tokens=* delims="eol^= %%i in ('"!COMSPEC!"') do break ^
-  & for /F "usebackq tokens=* delims="eol^= %%j in ('"!?.!"') do endlocal & endlocal ^
-  & start "" /B /WAIT "%SystemRoot%\System32\mshta.exe" vbscript:ExecuteGlobal("Close(CreateObject(""Shell.Application"").ShellExecute(""%%~i"", ""/k @%%~j"", """", ""runas"", 1))"^)
+  for /F "tokens=* delims="eol^= %%i in ("!__SCRIPT__!") do break ^
+  & for /F "usebackq tokens=* delims="eol^= %%j in ('"!?0!"') do break ^
+  & for /F "usebackq tokens=* delims="eol^= %%k in ('"!?@!"') do endlocal & endlocal ^
+  & set "?0=%%~j" & set "?@=%%~k" ^
+  & start "" /B /WAIT "%SystemRoot%\System32\mshta.exe" vbscript:%%i
   exit /b
 )
 
