@@ -10,6 +10,9 @@ rem   Rescans drives on timeout.
 
 setlocal
 
+rem switch to the current directory drive root to release the current directory and avoid it's accidental lock
+cd \ & cd "%TEMP%"
+
 set COUNT=1
 
 :LOOP

@@ -1,3 +1,6 @@
+2026.07.23:
+* fixed: scripts/Windows/FileSystem/ping_drives.bat: current directory accidental lock
+
 2026.07.18:
 * changed: scripts/*.bat: sync with `userbin` and `contools` projects
 
