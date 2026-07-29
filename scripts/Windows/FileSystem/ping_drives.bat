@@ -17,9 +17,12 @@ set COUNT=1
 
 :LOOP
 set "PING_DRIVES="
-for %%i in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do if exist "%%i:\.pingme" call set "PING_DRIVES=%%PING_DRIVES%% %%i"
+for %%i in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do if exist "%%i:\.pingme" call set "PING_DRIVES=%%PING_DRIVES%% %%i"
 
-echo %COUNT% - %TIME%
+if defined PING_DRIVES (
+  echo %COUNT% - %TIME% -%PING_DRIVES%
+) else echo %COUNT% - %TIME%
+
 set /A COUNT+=1
 for %%i in (%PING_DRIVES%) do if exist "%%i:\.pingme" call :PING_DRIVE
 timeout /T 60 >nul

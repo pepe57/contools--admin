@@ -1,3 +1,6 @@
+2026.07.29:
+* changed: scripts/Windows/FileSystem/ping_drives.bat: print pinged drives list
+
 2026.07.23:
 * fixed: scripts/Windows/FileSystem/ping_drives.bat: current directory accidental lock
 
