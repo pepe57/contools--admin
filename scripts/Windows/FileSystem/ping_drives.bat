@@ -31,9 +31,7 @@ goto LOOP
 :PING_DRIVE
 for %%# in (:) do for /F "tokens=* delims=" %%j in ("%%i:\.pingme") do set "PING_FILE=%%~fj" & set "FILE_ATTR=%%~aj"
 
-rem touch a file without stdout redirection into a file (write)
+rem touch a file without stdout redirection into a file (write), skip on the read only attribute
 if "%FILE_ATTR%" == "%FILE_ATTR:r=%" (
   copy /B "%PING_FILE%"+,, "%PING_FILE%" >nul
-) else (
-  "%SystemRoot%\System32\attrib.exe" -r "%PING_FILE%" >nul & copy /B "%PING_FILE%"+,, "%PING_FILE%" >nul & "%SystemRoot%\System32\attrib.exe" +r "%PING_FILE%" >nul
 )

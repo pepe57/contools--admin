@@ -1,3 +1,6 @@
+2026.08.09:
+* changed: scripts/Windows/FileSystem/ping_drives.bat: skip ping on the file read only attribute
+
 2026.07.29:
 * changed: scripts/Windows/FileSystem/ping_drives.bat: print pinged drives list
 
