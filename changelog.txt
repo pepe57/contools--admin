@@ -1,4 +1,7 @@
 2026.08.21:
+* new: scripts/Windows/TaskSched/*able_tasksched_new_tasks.bat: scripts to enable/disable the Task Scheduler of a new task creation for everyone
+
+2026.08.21:
 * fixed: __init__/__init__.bat: initialization fixup
 
 2026.08.10:
