@@ -1,4 +1,7 @@
 2026.08.21:
+* changed: scripts/Windows/TasksDisable/02_Maintenance/win?/01_disable_task_scheduler_new_tasks.bat: switched to use standalone enable/disable scripts
+
+2026.08.21:
 * new: scripts/Windows/TaskSched/*able_tasksched_new_tasks.bat: scripts to enable/disable the Task Scheduler of a new task creation for everyone
 
 2026.08.21:
