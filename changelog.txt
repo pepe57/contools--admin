@@ -1,3 +1,6 @@
+2026.08.31:
+* changed: scripts: *.bat: switched to use `cd /d` command with drive change
+
 2026.08.21:
 * changed: scripts/Windows/TasksDisable/02_Maintenance/win?/01_disable_task_scheduler_new_tasks.bat: switched to use standalone enable/disable scripts
 
