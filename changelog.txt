@@ -1,4 +1,9 @@
 2026.08.31:
+* new: scripts/Windows/GroupPolicy: /install_hklm_shutdown_command.bat, /.impl/gpo_hklm.reg: script to install a shutdown command using Group Policy
+* new: scripts/Windows/GroupPolicy/enable_gp.bat: script to enable Group Policy for Windows 7/8 Home and Single Language editions
+* new: scripts/Windows/Services/Network/*_net_interface.bat: scripts for manual enable/disable net interfaces
+
+2026.08.31:
 * changed: scripts: *.bat: switched to use `cd /d` command with drive change
 
 2026.08.21:
