@@ -5,7 +5,7 @@ rem   Script disables telemetry tasks in Windows 8...
 
 setlocal
 
-call "%%~dp0..\__init__\__init__.bat"
+call "%%~dp0..\__init__\__init__.bat" || exit /b
 
 rem script names call stack, disabled due to self call and partial inheritance (process elevation does not inherit a parent process variables by default)
 rem if defined ?~ ( set "?~=%?~%-^>%~nx0" ) else if defined ?~nx0 ( set "?~=%?~nx0%-^>%~nx0" ) else set "?~=%~nx0"
