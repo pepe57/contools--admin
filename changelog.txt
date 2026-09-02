@@ -1,3 +1,6 @@
+2026.09.02:
+* changed: scripts/Windows/FileSystem/ping_drives.bat: print date
+
 2026.09.01:
 * changed: scripts: *.bat: minor fixup
 

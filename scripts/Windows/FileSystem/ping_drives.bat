@@ -23,7 +23,7 @@ for %%i in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do if exist "%%
 set /A COUNT+=1
 
 if not defined PING_DRIVES (
-  echo %COUNT% - %TIME%
+  echo %COUNT% - %DATE% %TIME%
   goto WAIT
 )
 
@@ -31,8 +31,8 @@ set "SKIP_DRIVES="
 for %%i in (%PING_DRIVES%) do if exist "%%i:\.pingme" call :PING_DRIVE
 
 if not defined SKIP_DRIVES (
-  echo %COUNT% - %TIME% -%PING_DRIVES%
-) else echo %COUNT% - %TIME% -%PING_DRIVES% - (skipped)%SKIP_DRIVES%
+  echo %COUNT% - %DATE% %TIME% -%PING_DRIVES%
+) else echo %COUNT% - %DATE% %TIME% -%PING_DRIVES% - (skipped)%SKIP_DRIVES%
 
 :WAIT
 timeout /T 60 >nul
