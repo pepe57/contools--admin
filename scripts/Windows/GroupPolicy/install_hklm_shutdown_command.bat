@@ -1,3 +1,5 @@
+<!-- : bat in wsf skip
+
 @echo off & goto DOC_END
 
 rem USAGE:
@@ -44,6 +46,8 @@ call "%%~dp0..\__init__\__init__.bat" || exit /b
 rem script names call stack, disabled due to self call and partial inheritance (process elevation does not inherit a parent process variables by default)
 rem if defined ?~ ( set "?~=%?~%-^>%~nx0" ) else if defined ?~nx0 ( set "?~=%?~nx0%-^>%~nx0" ) else set "?~=%~nx0"
 set "?~=%~nx0"
+
+set "?~f0=%~f0"
 
 if 0%IMPL_MODE% NEQ 0 goto IMPL
 "%USERBIN_SCRIPTS_BAT_ROOT%/runas/hta/cmd-admin.bat" /c @set "IMPL_MODE=1" ^& "%~f0" %*
@@ -117,11 +121,11 @@ call :FNAME TIME_FNAME
 set "CMD="
 set "ARG="
 
-call "%%CONTOOLS_ROOT%%/std/setshift.bat" -exe -num 1 %FLAG_SHIFT% CMD %%*
+call "%%CONTOOLS_ROOT%%/std/setshift.bat" -exe -num 1 %%FLAG_SHIFT%% CMD %%*
 
 set /A FLAG_SHIFT+=1
 
-call "%%CONTOOLS_ROOT%%/std/setshift.bat" -exe %FLAG_SHIFT% ARGS %%*
+call "%%CONTOOLS_ROOT%%/std/setshift.bat" -exe %%FLAG_SHIFT%% ARGS %%*
 
 if not defined CMD (
   echo;%?~%: error: command is not defined.
@@ -144,52 +148,40 @@ if exist "\\?\%CMD_FILE_PATH%\*" (
 
 :SKIP_CMD_SCRIPT
 
-call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" import "%%~dp0.impl\gpo_hklm.reg" || exit /b
+rem back up at first
 
-set "ARGS_ESCAPED="
-
-if defined ARGS set "ARGS_ESCAPED=%ARGS:"=\"%"
-
-rem install by overwrite
-
-for %%i in (Scripts State\Machine\Scripts) do (
-  call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\%%i\Shutdown\0" /v FileSysPath /d "%%SystemRoot%%\System32\GroupPolicy\Machine" /f || exit /b
-
-  if %FLAG_SCRIPT% NEQ 0 (
-    call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\%%i\Shutdown\0\0" /v Script /d "%%CMD_FILE_NAME%%" /f || exit /b
-  ) else call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\%%i\Shutdown\0\0" /v Script /d "%%CMD%%" /f || exit /b
-
-  call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\%%i\Shutdown\0\0" /v Parameters /d "%%ARGS_ESCAPED%%" /f || exit /b
-)
-
-if %FLAG_PS_SCRIPT% NEQ 0 (
-  call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown\0\0" /v IsPowershell /t REG_DWORD /d 1 /f || exit /b
-)
+set "BACKUP_DIR=%SystemRoot%\System32\GroupPolicy\%DATE_FNAME%.backup\%TIME_FNAME%"
 
 if not exist "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Shutdown" (
   call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%SystemRoot%%\System32\GroupPolicy\Machine\Scripts\Shutdown" || exit /b
   echo;
 )
 
-rem back up at first
+if not exist "%BACKUP_DIR%\Machine\Scripts\Shutdown" (
+  call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%BACKUP_DIR%%\Machine\Scripts\Shutdown" || exit /b
+  echo;
+)
 
-set "BACKUP_DIR=%SystemRoot%\System32\GroupPolicy\%DATE_FNAME%.backup\%TIME_FNAME%"
+(
+  call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown"               "%%BACKUP_DIR%%\Machine\Scripts\Shutdown.reg"
+  call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\State\Machine\Scripts\Shutdown" "%%BACKUP_DIR%%\Machine\Scripts\ShutdownState.reg"
+) 2>nul
 
 if %FLAG_SCRIPT% EQU 0 goto SKIP_BACKUP_CMD
 
 if exist "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Shutdown\%CMD_FILE_NAME%" (
   rem check on reinstall
   if /i not "%CMD_FILE_PATH%" == "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Shutdown\%CMD_FILE_NAME%" (
-    if not exist "%BACKUP_DIR%\Machine\Scripts\Shutdown" (
-      call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%BACKUP_DIR%%\Machine\Scripts\Shutdown" || exit /b
-      echo;
-    )
     call "%%CONTOOLS_ROOT%%/std/copy.bat" "%%SystemRoot%%\System32\GroupPolicy\Machine\Scripts\Shutdown\%%CMD_FILE_NAME%%" "%%BACKUP_DIR%%\Machine\Scripts\Shutdown\." /Y /B || exit /b
     echo;
   )
 )
 
 :SKIP_BACKUP_CMD
+
+rem install by overwrite
+
+"%SystemRoot%\System32\cscript.exe" //NOLOGO //JOB:IMPORT_REGISTRY "%?~f0%?.wsf"
 
 if exist "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Scripts.ini" (
   if not exist "%BACKUP_DIR%\Machine\Scripts" (
@@ -248,3 +240,74 @@ set "%~1=!%~1:-='!"
 set "%~1=!%~1:.='!"
 set "%~1=!%~1:,=''!"
 for /F "usebackq tokens=* delims="eol^= %%i in ('"!%~1:;='!"') do endlocal & set "%~1=%%~i"
+exit /b
+
+rem end of bat -->
+
+<package>
+  <job id="IMPORT_REGISTRY">
+    <script language="VBScript">
+      Set objShell = CreateObject("WScript.Shell")
+      Set objProc = objShell.Environment("Process")
+
+      Set objWMIReg = GetObject("winmgmts://./root/default:StdRegProv")
+
+      Const TypeBinary = 1
+      Const HKLM = &H80000002
+
+      ' SysRoot = objProc("SystemRoot") ' relied on the bitness of the parent process (`cmd.exe`)
+      SysRoot = objShell.ExpandEnvironmentStrings("%SystemRoot%") ' relied on the bitness of the `cscript.exe` process
+
+      CMD = objProc("CMD")
+      CMD_FILE_NAME = objProc("CMD_FILE_NAME")
+      ARGS = objProc("ARGS")
+      FLAG_SCRIPT = objProc("FLAG_SCRIPT")
+      FLAG_PS_SCRIPT = objProc("FLAG_PS_SCRIPT")
+
+      Set objXmlNode = CreateObject("MSXML2.DOMDocument").createElement("bin")
+      Set objStream = CreateObject("ADODB.Stream")
+
+      objStream.Type = TypeBinary
+      objStream.Open()
+
+      ' binary data as hex string
+      objXmlNode.dataType = "bin.hex"
+      objXmlNode.text = "00000000000000000000000000000000"
+
+      objStream.Write objXmlNode.nodeTypedValue
+      objStream.Position = 0
+
+      ExecTimeBytes = objStream.Read
+
+      objStream.Close
+      Set objStream = Nothing
+      set objXmlNode = Nothing
+
+      SubKeys = Array("Scripts\Shutdown\0", "State\Machine\Scripts\Shutdown\0")
+
+      For Each Key In SubKeys
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\GPO-ID",           "LocalGPO",                                     "REG_SZ"
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\SOM-ID",           "Local",                                        "REG_SZ"
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\FileSysPath",      SysRoot & "\System32\GroupPolicy\Machine",      "REG_SZ"
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\DisplayName",      "Local Group Policy",                           "REG_SZ"
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\PSScriptOrder",    &h00000001,                                     "REG_DWORD"
+
+        If FLAG_SCRIPT Then
+          objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\0\Script",       CMD_FILE_NAME,                                  "REG_SZ"
+        Else
+          objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\0\Script",       CMD,                                            "REG_SZ"
+        End If
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\0\Parameters",     ARGS,                                           "REG_SZ"
+
+        objWMIReg.CreateKey HKLM, "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\0"
+        objWMIReg.SetBinaryValue HKLM, "SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & Key & "\0", "ExecTime", ExecTimeBytes
+      Next
+
+      If FLAG_PS_SCRIPT Then
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & SubKeys(0) & "\0\IsPowershell",  &h00000001,                               "REG_DWORD"
+      Else
+        objShell.RegWrite "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\" & SubKeys(0) & "\0\IsPowershell",  &h00000000,                               "REG_DWORD"
+      End If
+    </script>
+  </job>
+</package>

@@ -1,3 +1,8 @@
+2026.09.08:
+* fixed: scripts/Windows/GroupPolicy/install_hklm_shutdown_command.bat: correct write a binary data into the registry
+* changed: scripts/Windows/GroupPolicy/install_hklm_shutdown_command.bat: added a being write registry backup
+* changed: scripts/Windows/GroupPolicy: /install_hklm_shutdown_command.bat, /.impl/gpo_hklm.reg: the registry file is converted into vbs code and removed
+
 2026.09.02:
 * changed: scripts/Windows/FileSystem/ping_drives.bat: print date
 
