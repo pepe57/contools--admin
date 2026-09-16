@@ -1,3 +1,6 @@
+2026.09.16:
+* fixed: scripts/Windows/GroupPolicy/install_hklm_shutdown_command.bat: minor improvements
+
 2026.09.08:
 * fixed: scripts/Windows/GroupPolicy/install_hklm_shutdown_command.bat: correct write a binary data into the registry
 * changed: scripts/Windows/GroupPolicy/install_hklm_shutdown_command.bat: added a being write registry backup

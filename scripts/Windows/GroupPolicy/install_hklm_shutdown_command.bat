@@ -34,7 +34,7 @@ rem   2. To install a script
 rem     >
 rem     install_hklm_shutdown_command.bat -s "...\shutdown.bat"
 rem
-rem   3. To reinstall has been installed script
+rem   3. To reinstall been installed script
 rem     >
 rem     install_hklm_shutdown_command.bat -s "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Shutdown\shutdown.bat"
 :DOC_END
@@ -152,15 +152,11 @@ rem back up at first
 
 set "BACKUP_DIR=%SystemRoot%\System32\GroupPolicy\%DATE_FNAME%.backup\%TIME_FNAME%"
 
-if not exist "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Shutdown" (
-  call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%SystemRoot%%\System32\GroupPolicy\Machine\Scripts\Shutdown" || exit /b
-  echo;
-)
+( call "%%CONTOOLS_ROOT%%/std/mkdir_if_notexist_and.bat" "%%SystemRoot%%\System32\GroupPolicy\Machine\Scripts\Shutdown" && echo; ) ^
+  || call "%%CONTOOLS_ROOT%%/std/if_pass.bat" %%ERRORLEVEL%% EQU -1 || exit /b
 
-if not exist "%BACKUP_DIR%\Machine\Scripts\Shutdown" (
-  call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%BACKUP_DIR%%\Machine\Scripts\Shutdown" || exit /b
-  echo;
-)
+( call "%%CONTOOLS_ROOT%%/std/mkdir_if_notexist_and.bat" "%%BACKUP_DIR%%\Machine\Scripts\Shutdown" && echo; ) ^
+  || call "%%CONTOOLS_ROOT%%/std/if_pass.bat" %%ERRORLEVEL%% EQU -1 || exit /b
 
 (
   call "%%CONTOOLS_BUILD_TOOLS_ROOT%%/call.bat" "%%SystemRoot%%\System32\reg.exe" export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy\Scripts\Shutdown"               "%%BACKUP_DIR%%\Machine\Scripts\Shutdown.reg"
@@ -184,19 +180,11 @@ rem install by overwrite
 "%SystemRoot%\System32\cscript.exe" //NOLOGO //JOB:IMPORT_REGISTRY "%?~f0%?.wsf"
 
 if exist "%SystemRoot%\System32\GroupPolicy\Machine\Scripts\Scripts.ini" (
-  if not exist "%BACKUP_DIR%\Machine\Scripts" (
-    call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%BACKUP_DIR%%\Machine\Scripts" || exit /b
-    echo;
-  )
   call "%%CONTOOLS_ROOT%%/std/copy.bat" "%%SystemRoot%%\System32\GroupPolicy\Machine\Scripts\Scripts.ini" "%%BACKUP_DIR%%\Machine\Scripts\." /Y /B || exit /b
   echo;
 )
 
 if exist "%SystemRoot%\System32\GroupPolicy\gpt.ini" (
-  if not exist "%BACKUP_DIR%" (
-    call "%%CONTOOLS_ROOT%%/std/mkdir.bat" "%%BACKUP_DIR%%" || exit /b
-    echo;
-  )
   call "%%CONTOOLS_ROOT%%/std/copy.bat" "%%SystemRoot%%\System32\GroupPolicy\gpt.ini" "%%BACKUP_DIR%%\." /Y /B || exit /b
   echo;
 )
